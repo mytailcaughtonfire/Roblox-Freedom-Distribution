@@ -1,8 +1,11 @@
 <h1 align="center"><img src="/Assets/Logo.png" height="20px"/> Rōblox: Freedom Distribution <img src="/Assets/Logo.png" height="20px"/></h1>
 
 _This is a fork of Roblox Freedom Distribution that aims to add in a July 8, 2022 Rōblox Studio and Client!_
+
 ⚠ This is made with the use of LLMs! 
+
 While I do know how to code fairly well, unfortunately my expertise diminishes in server-client applications, and complicated math.
+
 However, I do not blindly push code, I do take my time to review and see what the ai-slop code is doing. 
 
 <p align="right">
@@ -983,4 +986,5 @@ price = 1
 ---
 
 <p align="center"><img src="/Assets/Logo.png" height="60px"/></p>
+
 
