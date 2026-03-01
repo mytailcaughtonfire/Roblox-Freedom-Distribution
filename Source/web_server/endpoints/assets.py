@@ -5,6 +5,8 @@ import util.const
 
 @server_path("/asset")
 @server_path("/asset/")
+@server_path("/Asset")
+@server_path("/Asset/")
 @server_path("/v1/asset")
 @server_path("/v1/asset/")
 @server_path("/.127.0.0.1/asset/")
@@ -55,3 +57,4 @@ def _(self: web_server_handler) -> bool:
     '''
     self.send_json('true')
     return True
+
