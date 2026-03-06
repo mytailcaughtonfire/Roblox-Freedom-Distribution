@@ -87,6 +87,9 @@ def _(
         parser, args_ns,
     )
 
+    import util.ssl_context as _ssl_ctx
+    use_rbolock = _ssl_ctx.use_rblxhub_certs()
+
     return [
         player.obj_type(
             rcc_host=rcc_host,
@@ -95,6 +98,7 @@ def _(
             web_port=web_port,
             user_code=user_code,
             logger=log_filter,
+            use_rbolock_base=use_rbolock,
         )
         for (
             web_host, rcc_host, web_port, rcc_port, user_code,

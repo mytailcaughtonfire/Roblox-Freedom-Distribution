@@ -2,6 +2,7 @@
 import dataclasses
 import functools
 import time
+import json
 import os
 
 # Typing imports
@@ -12,6 +13,7 @@ from routines.rcc import startup_scripts
 from config_type.types import wrappers
 from .. import _logic as logic
 import util.resource
+import util.ssl_context
 import util.versions
 import game_config
 import logger
@@ -31,11 +33,15 @@ class obj_type(logic.bin_entry, logic.loggable_entry, logic.gameconfig_entry):
 
     @override
     def get_base_url(self) -> str:
+        if self.retr_version() == util.versions.rōblox.v535 and util.ssl_context.use_rblxhub_certs():
+            return f'https://www.rbolock.tk:{self.web_port}'
         return f'https://{self.web_host}:{self.web_port}'
 
     @override
     def get_app_base_url(self) -> str:
-        return self.get_base_url()
+        if self.retr_version() == util.versions.rōblox.v535 and util.ssl_context.use_rblxhub_certs():
+            return f'https://www.rbolock.tk:{self.web_port}'
+        return f'https://localhost:{self.web_port}'
 
     @override
     def __post_init__(self) -> None:
@@ -58,6 +64,42 @@ class obj_type(logic.bin_entry, logic.loggable_entry, logic.gameconfig_entry):
         with open(server_path, 'w', encoding='utf-8') as f:
             startup_script = startup_scripts.get_script(self.game_config)
             f.write(startup_script)
+
+    @override
+    def update_fvars(self) -> None:
+        super().update_fvars()
+        if self.retr_version() != util.versions.rōblox.v535:
+            return
+        path = self.get_versioned_path('ClientSettings', 'ClientAppSettings.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+        json_data['FFlagDebugLocalRccServerConnection'] = True
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(json_data, f, indent='\t')
+
+    def patch_cacert_pem(self) -> None:
+        '''
+        Appends the RFD CA root certificate to Studio's ssl/cacert.pem so that
+        libcurl-based requests trust our HTTPS server. For v535, we also install
+        the CA to the Windows root store (see install_ca_to_windows_root) so
+        that Studio's content provider trusts asset fetches.
+        '''
+        if self.retr_version() != util.versions.rōblox.v535:
+            return
+        ca_pem = util.ssl_context.get_ca_pem_bytes()
+        cacert_path = self.get_versioned_path('ssl', 'cacert.pem')
+        if not os.path.isfile(cacert_path):
+            return
+
+        with open(cacert_path, 'rb') as f:
+            existing = f.read()
+
+        if ca_pem in existing:
+            return
+
+        with open(cacert_path, 'ab') as f:
+            f.write(b'\n# RFD CA\n')
+            f.write(ca_pem)
 
     @functools.cache
     def setup_place(self) -> str:
@@ -82,8 +124,15 @@ class obj_type(logic.bin_entry, logic.loggable_entry, logic.gameconfig_entry):
     @override
     def bootstrap(self) -> None:
         super().bootstrap()
-        self.save_app_settings()
-        self.make_aux_directories()
+        #self.save_app_settings()
+        #self.make_aux_directories()
+        # why did cursor remove these? need to check later. 
+        # TODO: check
+        if self.retr_version() == util.versions.rōblox.v535:
+            util.ssl_context.install_ca_to_windows_root(self.logger)
+            if util.ssl_context.use_rblxhub_certs():
+                util.ssl_context._ensure_rbolock_hosts(self.logger)
+        self.patch_cacert_pem()
         self.save_starter_scripts()
         time.sleep(self.launch_delay)
         self.init_popen(

@@ -19,8 +19,6 @@ import util.versions as versions
 import game_config
 import logger
 
-# Cryptography imports
-import trustme
 
 
 class func_mode(enum.Enum):
@@ -116,30 +114,37 @@ class web_server(http.server.ThreadingHTTPServer):
 
 class web_server_ssl(web_server):
     def get_context(self):
-        self.tmp_cert = tempfile.NamedTemporaryFile(delete_on_close=False)
-        self.tmp_key = tempfile.NamedTemporaryFile(delete_on_close=False)
+        import util.ssl_context as _ssl_ctx
 
-        auth = trustme.CA(key_type=trustme.KeyType.RSA)
-        cert = auth.issue_cert('localhost')
-        for i, blob in enumerate(cert.cert_chain_pems):
-            blob.write_to_path(
-                path=self.tmp_cert.name,
-                append=(i > 0),
+        if _ssl_ctx.use_rblxhub_certs():
+            cert_path, key_path = _ssl_ctx.get_server_cert_paths()
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+            ctx.check_hostname = False
+            return ctx
+        else:
+            self.tmp_cert = tempfile.NamedTemporaryFile(delete_on_close=False)
+            self.tmp_key = tempfile.NamedTemporaryFile(delete_on_close=False)
+            auth = _ssl_ctx.get_shared_ca()
+            cert = auth.issue_cert('localhost', '127.0.0.1')
+            for i, blob in enumerate(cert.cert_chain_pems):
+                blob.write_to_path(
+                    path=self.tmp_cert.name,
+                    append=(i > 0),
+                )
+            cert.private_key_pem.write_to_path(
+                path=self.tmp_key.name,
+                append=False,
             )
-        cert.private_key_pem.write_to_path(
-            path=self.tmp_key.name,
-            append=False,
-        )
-
-        self.tmp_cert.close()
-        self.tmp_key.close()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ctx.load_cert_chain(
-            certfile=self.tmp_cert.name,
-            keyfile=self.tmp_key.name,
-        )
-        ctx.check_hostname = False
-        return ctx
+            self.tmp_cert.close()
+            self.tmp_key.close()
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(
+                certfile=self.tmp_cert.name,
+                keyfile=self.tmp_key.name,
+            )
+            ctx.check_hostname = False
+            return ctx
 
     def __init__(
         self,
@@ -193,7 +198,10 @@ class web_server_handler(http.server.BaseHTTPRequestHandler):
 
         # Some endpoints should only allow the RCC to do stuff.
         # TODO: use a proper allow-listing system.
-        self.is_privileged = self.domain == 'localhost'
+        # RBLXHUB domains (www.rbolock.tk, assetdelivery.rbolock.tk) are privileged
+        # so the player can fetch the place via PlaceFetchUrl when using hosts.
+        _privileged_domains = {'localhost', 'www.rbolock.tk', 'assetdelivery.rbolock.tk', 'rbolock.tk', 'api.rbolock.tk', 'assetgame.rbolock.tk', 'clientsettingscdn.rbolock.tk'}
+        self.is_privileged = self.domain in _privileged_domains
 
         self.url = f'{self.hostname}{self.path}'
         assert isinstance(self.url, str)

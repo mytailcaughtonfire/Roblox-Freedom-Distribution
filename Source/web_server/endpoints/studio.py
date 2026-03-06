@@ -3,6 +3,7 @@ import json
 import time
 
 # Local application imports
+import util.const
 import util.versions as versions
 from web_server._logic import web_server_handler, server_path
 
@@ -79,8 +80,224 @@ def _(self: web_server_handler) -> bool:
     })
     return True
 
+_ROBLOSECURITY = (
+    '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|'
+    '_DGJJD464646464dfgdgdgdCUdgjneth4iht4ih64uh4uihy4y4yuhi4yhuiyhui4yhui4uihy4huiyhu4iyhuihu4hhdghdgihdigdhuigdhuig'
+    'dhuigihugdgidojgijodijogdijogdjoigdjoidijogijodgijdgiojdgijodgijoF'
+)
 
-@server_path('/my/settings/json', commands={'GET'})
+_RBXID = (
+    '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|'
+    '_eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2NDA3MGQyNC0zYWR4LTQ5NzMtODAxYy0yOWNhNzUyNTA5NjIiLCJzdWfdijogdoijdijogijodcB6YExhM'
+)
+
+
+@server_path('/studio-login/v1/login', versions={versions.rōblox.v535})
 def _(self: web_server_handler) -> bool:
+    self.send_response(200)
+    self.send_header('set-cookie', f'.ROBLOSECURITY={_ROBLOSECURITY}')
+    self.send_header('set-cookie', f'.RBXID={_RBXID}')
+    self.send_json({
+        'user': {
+            'UserId': 1,
+            'Username': 'Roblox',
+            'AgeBracket': 0,
+            'Roles': [],
+            'Email': {
+                'value': 'r*********@rbolock.tk',
+                'isVerified': True,
+            },
+            'IsBanned': False,
+            'DisplayName': 'Roblox',
+        },
+        'userAgreements': [],
+    }, status=None)
+    return True
+
+
+@server_path('/v1/game-start-info', versions={versions.rōblox.v535})
+@server_path('/v1.1/game-start-info', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''Avatar type and scale configuration for 2022M.'''
+    self.send_json({
+        'gameAvatarType': 'PlayerChoice',
+        'allowCustomAnimations': 'True',
+        'universeAvatarCollisionType': 'OuterBox',
+        'universeAvatarBodyType': 'Standard',
+        'jointPositioningType': 'ArtistIntent',
+        'message': '',
+        'universeAvatarMinScales': {
+            'height': 0.9, 'width': 0.7, 'head': 0.95,
+            'depth': 0, 'proportion': 0, 'bodyType': 0,
+        },
+        'universeAvatarMaxScales': {
+            'height': 1.05, 'width': 1, 'head': 1,
+            'depth': 0, 'proportion': 0, 'bodyType': 0,
+        },
+        'universeAvatarAssetOverrides': [],
+        'moderationStatus': None,
+    })
+    return True
+
+
+@server_path('/studio-open-place/v1/openplace', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''
+    Studio "Open place" endpoint. Returns place/universe metadata for placeId.
+    Required when Studio opens place 1818 from the server (api.rbolock.tk).
+    '''
+    try:
+        place_id = int(self.query.get('placeId', util.const.PLACE_IDEN_CONST))
+    except (ValueError, TypeError):
+        place_id = util.const.PLACE_IDEN_CONST
+    self.send_json({
+        'universe': {
+            'Id': place_id,
+            'RootPlaceId': place_id,
+            'Name': 'RFD Place',
+            'IsArchived': False,
+            'CreatorType': 'User',
+            'CreatorTargetId': 1,
+            'PrivacyType': 'Public',
+            'Created': '2022-01-01T00:00:00.00+00:00',
+            'Updated': '2022-01-01T00:00:00.00+00:00',
+        },
+        'teamCreateEnabled': False,
+        'place': {
+            'Creator': {'CreatorType': 'User', 'CreatorTargetId': 1},
+        },
+    })
+    return True
+
+
+@server_path('/game/GetCurrentUser.ashx', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    self.send_json(1)
+    return True
+
+
+@server_path('/My/settings/json', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''
+    2022M user settings endpoint.  Returns account metadata that Studio
+    expects. Ported from RBLXHUB My/settings/json.php.
+    '''
+    base = self.hostname
+    self.send_json({
+        'ChangeUsernameEnabled': True,
+        'IsAdmin': True,
+        'UserId': 1,
+        'Name': 'Boblocks',
+        'DisplayName': 'Boblocks',
+        'IsEmailOnFile': True,
+        'IsEmailVerified': True,
+        'IsPhoneFeatureEnabled': True,
+        'RobuxRemainingForUsernameChange': 9999999,
+        'PreviousUserNames': '',
+        'UseSuperSafePrivacyMode': False,
+        'IsAppChatSettingEnabled': True,
+        'IsGameChatSettingEnabled': True,
+        'IsParentalSpendControlsEnabled': True,
+        'IsSetPasswordNotificationEnabled': False,
+        'ChangePasswordRequiresTwoStepVerification': False,
+        'ChangeEmailRequiresTwoStepVerification': False,
+        'UserEmail': 'user@localhost',
+        'UserEmailMasked': True,
+        'UserEmailVerified': True,
+        'CanHideInventory': True,
+        'CanTrade': True,
+        'MissingParentEmail': False,
+        'IsUpdateEmailSectionShown': True,
+        'IsUnder13UpdateEmailMessageSectionShown': False,
+        'IsUserConnectedToFacebook': False,
+        'IsTwoStepToggleEnabled': False,
+        'AgeBracket': 0,
+        'UserAbove13': True,
+        'ClientIpAddress': '127.0.0.1',
+        'AccountAgeInDays': 360,
+        'IsPremium': False,
+        'IsBcRenewalMembership': False,
+        'PremiumFeatureId': None,
+        'HasCurrencyOperationError': False,
+        'CurrencyOperationErrorMessage': None,
+        'Tab': None,
+        'ChangePassword': False,
+        'IsAccountPinEnabled': False,
+        'IsAccountRestrictionsFeatureEnabled': False,
+        'IsAccountRestrictionsSettingEnabled': False,
+        'IsAccountSettingsSocialNetworksV2Enabled': False,
+        'IsUiBootstrapModalV2Enabled': True,
+        'IsDateTimeI18nPickerEnabled': True,
+        'InApp': False,
+        'MyAccountSecurityModel': {
+            'IsEmailSet': True,
+            'IsEmailVerified': True,
+            'IsTwoStepEnabled': False,
+            'ShowSignOutFromAllSessions': True,
+            'TwoStepVerificationViewModel': {
+                'UserId': 1,
+                'IsEnabled': False,
+                'CodeLength': 0,
+                'ValidCodeCharacters': None,
+            },
+        },
+        'ApiProxyDomain': base,
+        'AccountSettingsApiDomain': base,
+        'AuthDomain': base,
+        'IsDisconnectFacebookEnabled': True,
+        'IsDisconnectXboxEnabled': True,
+        'NotificationSettingsDomain': base,
+        'AllowedNotificationSourceTypes': [
+            'Test', 'FriendRequestReceived', 'FriendRequestAccepted',
+            'PartyInviteReceived', 'PartyMemberJoined', 'ChatNewMessage',
+            'PrivateMessageReceived', 'UserAddedToPrivateServerWhiteList',
+            'ConversationUniverseChanged', 'TeamCreateInvite', 'GameUpdate',
+            'DeveloperMetricsAvailable', 'GroupJoinRequestAccepted',
+            'Sendr', 'ExperienceInvitation',
+        ],
+        'AllowedReceiverDestinationTypes': ['NotificationStream'],
+        'BlacklistedNotificationSourceTypesForMobilePush': [],
+        'MinimumChromeVersionForPushNotifications': 50,
+        'PushNotificationsEnabledOnFirefox': False,
+        'LocaleApiDomain': base,
+        'HasValidPasswordSet': True,
+        'IsFastTrackAccessible': False,
+        'HasFreeNameChange': False,
+        'IsAgeDownEnabled': True,
+        'IsDisplayNamesEnabled': True,
+        'IsBirthdateLocked': False,
+    })
+    return True
+
+
+@server_path('/My', versions={versions.rōblox.v535})
+@server_path('/My/', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''2022M My base. Placeholder for RBLXHUB compatibility.'''
+    self.send_json({
+        'UserId': 1,
+        'Name': 'Roblox',
+        'DisplayName': 'Roblox',
+    })
+    return True
+
+
+@server_path('/My/Places', versions={versions.rōblox.v535})
+@server_path('/My/Places.aspx', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''2022M My Places. Returns empty place list for Studio.'''
+    self.send_json({'data': [], 'nextPageCursor': None})
+    return True
+
+
+@server_path('/GetAllowedSecurityKeys/index', versions={versions.rōblox.v535})
+@server_path('/GetAllowedSecurityKeys/', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    self.send_json({})
+    return True
+
+
+@server_path(r'/universal-app-configuration/v1/behaviors/[^/]+/content', regex=True, versions={versions.rōblox.v535})
+def _(self: web_server_handler, match) -> bool:
     self.send_json({})
     return True

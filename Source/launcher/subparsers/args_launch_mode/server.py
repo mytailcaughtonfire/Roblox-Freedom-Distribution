@@ -11,8 +11,9 @@ import util.resource
 import util.const
 import logger
 
-from routines import player, rcc, web
+from routines import player, rcc, studio_server, web
 from routines import _logic as logic
+import util.versions
 
 import launcher.subparsers._logic as sub_logic
 
@@ -213,18 +214,31 @@ def _(
                 ))
 
         if not args_ns.skip_rcc:
-            rcc_routine_args.add(
-                rcc.obj_type(
-                    # TODO: add support for RCC to connect to hosts other than `localhost`.
-                    web_host='localhost',
-                    web_port=web_port,
-                    rcc_port=rcc_port,
-                    logger=log_filter,
-                    game_config=game_config,
-                ),
-            )
+            version = game_config.game_setup.roblox_version
+            if version == util.versions.rōblox.v535:
+                rcc_routine_args.add(
+                    studio_server.obj_type(
+                        web_host='localhost',
+                        web_port=web_port,
+                        rcc_port=rcc_port,
+                        logger=log_filter,
+                        game_config=game_config,
+                    ),
+                )
+            else:
+                rcc_routine_args.add(
+                    rcc.obj_type(
+                        # TODO: add support for RCC to connect to hosts other than `localhost`.
+                        web_host='localhost',
+                        web_port=web_port,
+                        rcc_port=rcc_port,
+                        logger=log_filter,
+                        game_config=game_config,
+                    ),
+                )
 
         if args_ns.run_client:
+            import util.ssl_context as _ssl_ctx
             rcc_routine_args.add(
                 player.obj_type(
                     rcc_host='127.0.0.1',
@@ -233,6 +247,7 @@ def _(
                     web_port=web_port,
                     user_code=args_ns.user_code,
                     logger=log_filter,
+                    use_rbolock_base=_ssl_ctx.use_rblxhub_certs(),
                     # Some CoreGUI elements don't render properly if we join too early.
                     launch_delay=3,
                 ),

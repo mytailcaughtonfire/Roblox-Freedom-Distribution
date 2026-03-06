@@ -9,6 +9,8 @@ import util.const
 @server_path("/Asset/")
 @server_path("/v1/asset")
 @server_path("/v1/asset/")
+@server_path("/v2/assets")
+@server_path("/v2/assets/")
 @server_path("/.127.0.0.1/asset/")
 def _(self: web_server_handler) -> bool:
     asset_cache = self.game_config.asset_cache
@@ -57,4 +59,3 @@ def _(self: web_server_handler) -> bool:
     '''
     self.send_json('true')
     return True
-
