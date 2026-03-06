@@ -67,7 +67,7 @@ def _(self: web_server_handler) -> bool:
 
 @server_path('/device/initialize')
 def _(self: web_server_handler) -> bool:
-    self.send_json({"browserTrackerId": 0, "appDeviceIdentifier": None})
+    self.send_json({"browserTrackerId": 1, "appDeviceIdentifier": None}) # TODO: browserTrackerId = 1 on v535, 0 otherwise? gotta test..
     return True
 
 
