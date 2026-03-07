@@ -220,11 +220,11 @@ def _(self: web_server_handler) -> bool:
     return True
 
 
-@server_path('/My/settings/json', versions={versions.rōblox.v535})
+@server_path('/my/settings/json', versions={versions.rōblox.v535})
 def _(self: web_server_handler) -> bool:
     '''
     2022M user settings endpoint.  Returns account metadata that Studio
-    expects. Ported from RBLXHUB My/settings/json.php.
+    expects. Ported from RBLXHUB my/settings/json.php.
     '''
     base = self.hostname
     self.send_json({
@@ -365,4 +365,29 @@ def _(self: web_server_handler) -> bool:
     self.send_header('Content-Length', str(len(data)))
     self.end_headers()
     self.wfile.write(data)
+    return True
+
+
+@server_path('/universes/get-info', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    self.send_json({
+        'Name': 'RFD',
+        'Description': '',
+        'RootPlace': 1,
+        'StudioAccessToApisAllowed': True,
+        'CurrentUserHasEditPermissions': True,
+        'UniverseAvatarType': 'PlayerChoice',
+    })
+    return True
+
+
+@server_path('/universes/validate-place-join', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    self.send_data(b'true')
+    return True
+
+
+@server_path(r'/universes/\d+/cloudeditenabled', regex=True, versions={versions.rōblox.v535})
+def _(self: web_server_handler, match) -> bool:
+    self.send_json({'canManage': True, 'canCloudEdit': True})
     return True
