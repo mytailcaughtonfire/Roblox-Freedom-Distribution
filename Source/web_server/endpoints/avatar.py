@@ -177,3 +177,27 @@ def _(self: web_server_handler) -> bool:
         "moderationStatus": None,
     })
     return True
+
+@server_path('/v1/game-start-info', versions={versions.rōblox.v535})
+@server_path('/v1.1/game-start-info', versions={versions.rōblox.v535})
+def _(self: web_server_handler) -> bool:
+    '''Avatar type and scale configuration for 2022M.'''
+    self.send_json({
+        'gameAvatarType': 'PlayerChoice',
+        'allowCustomAnimations': 'True',
+        'universeAvatarCollisionType': 'OuterBox',
+        'universeAvatarBodyType': 'Standard',
+        'jointPositioningType': 'ArtistIntent',
+        'message': '',
+        'universeAvatarMinScales': {
+            'height': 0.9, 'width': 0.7, 'head': 0.95,
+            'depth': 0, 'proportion': 0, 'bodyType': 0,
+        },
+        'universeAvatarMaxScales': {
+            'height': 1.05, 'width': 1, 'head': 1,
+            'depth': 0, 'proportion': 0, 'bodyType': 0,
+        },
+        'universeAvatarAssetOverrides': [],
+        'moderationStatus': None,
+    })
+    return True

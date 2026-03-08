@@ -2,6 +2,8 @@ from web_server._logic import web_server_handler, server_path
 import assets.returns as returns
 import util.const
 
+#@server_path("/v2/assets")
+#@server_path("/v2/assets/")
 
 @server_path("/asset")
 @server_path("/asset/")
@@ -9,8 +11,6 @@ import util.const
 @server_path("/Asset/")
 @server_path("/v1/asset")
 @server_path("/v1/asset/")
-@server_path("/v2/assets")
-@server_path("/v2/assets/")
 @server_path("/.127.0.0.1/asset/")
 def _(self: web_server_handler) -> bool:
     asset_cache = self.game_config.asset_cache

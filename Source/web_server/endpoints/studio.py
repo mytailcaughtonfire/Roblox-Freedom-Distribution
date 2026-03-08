@@ -158,32 +158,6 @@ def _(self: web_server_handler) -> bool:
     }, status=None)
     return True
 
-
-@server_path('/v1/game-start-info', versions={versions.rōblox.v535})
-@server_path('/v1.1/game-start-info', versions={versions.rōblox.v535})
-def _(self: web_server_handler) -> bool:
-    '''Avatar type and scale configuration for 2022M.'''
-    self.send_json({
-        'gameAvatarType': 'PlayerChoice',
-        'allowCustomAnimations': 'True',
-        'universeAvatarCollisionType': 'OuterBox',
-        'universeAvatarBodyType': 'Standard',
-        'jointPositioningType': 'ArtistIntent',
-        'message': '',
-        'universeAvatarMinScales': {
-            'height': 0.9, 'width': 0.7, 'head': 0.95,
-            'depth': 0, 'proportion': 0, 'bodyType': 0,
-        },
-        'universeAvatarMaxScales': {
-            'height': 1.05, 'width': 1, 'head': 1,
-            'depth': 0, 'proportion': 0, 'bodyType': 0,
-        },
-        'universeAvatarAssetOverrides': [],
-        'moderationStatus': None,
-    })
-    return True
-
-
 @server_path('/studio-open-place/v1/openplace', versions={versions.rōblox.v535})
 def _(self: web_server_handler) -> bool:
     '''
@@ -196,19 +170,19 @@ def _(self: web_server_handler) -> bool:
         place_id = util.const.PLACE_IDEN_CONST
     self.send_json({
         'universe': {
-            'Id': place_id,
-            'RootPlaceId': place_id,
-            'Name': 'RFD Place',
+            'Id': 28220420, #place_id,
+            'RootPlaceId': 95206881, #place_id,
+            'Name': 'Baseplate',
             'IsArchived': False,
             'CreatorType': 'User',
-            'CreatorTargetId': 1,
+            'CreatorTargetId': 998796, #1
             'PrivacyType': 'Public',
-            'Created': '2022-01-01T00:00:00.00+00:00',
-            'Updated': '2022-01-01T00:00:00.00+00:00',
+            'Created': '2013-11-01T08:47:14.07+00:00',
+            'Updated': '2023-05-02T22:03:01.107+00:00',
         },
         'teamCreateEnabled': False,
         'place': {
-            'Creator': {'CreatorType': 'User', 'CreatorTargetId': 1},
+            'Creator': {'CreatorType': 'User', 'CreatorTargetId': 998796}, #1
         },
     })
     return True
@@ -371,8 +345,8 @@ def _(self: web_server_handler) -> bool:
 @server_path('/universes/get-info', versions={versions.rōblox.v535})
 def _(self: web_server_handler) -> bool:
     self.send_json({
-        'Name': 'RFD',
-        'Description': '',
+        'Name': 'RBLXHUB',
+        'Description': 'BillyBloxxer',
         'RootPlace': 1,
         'StudioAccessToApisAllowed': True,
         'CurrentUserHasEditPermissions': True,
@@ -390,4 +364,44 @@ def _(self: web_server_handler) -> bool:
 @server_path(r'/universes/\d+/cloudeditenabled', regex=True, versions={versions.rōblox.v535})
 def _(self: web_server_handler, match) -> bool:
     self.send_json({'canManage': True, 'canCloudEdit': True})
+    return True
+
+@server_path(r'/v2/assets/(\d+)/details', regex=True, versions={versions.rōblox.v535})
+def _(self: web_server_handler, match) -> bool:
+    asset_id = int(match.group(1))
+    self.send_json({
+        'TargetId': asset_id,
+        'ProductType': 'User Product',
+        'AssetId': asset_id,
+        'ProductId': 1305046,
+        'Name': 'RBLXHUB 😈😈😈',
+        'Description': 'we cooking',
+        'AssetTypeId': 9,
+        'Creator': {
+            'Id': 79390755,
+            'Name': 'guest79390755',
+            'CreatorType': 'User',
+            'CreatorTargetId': 1,
+            'HasVerifiedBadge': True,
+        },
+        'IconImageAssetId': 607948062,
+        'Created': '2007-05-01T01:07:04.78Z',
+        'Updated': '2023-08-02T18:27:57.473Z',
+        'PriceInRobux': None,
+        'PriceInTickets': None,
+        'Sales': 0,
+        'IsNew': False,
+        'IsForSale': False,
+        'IsPublicDomain': False,
+        'IsLimited': False,
+        'IsLimitedUnique': False,
+        'Remaining': None,
+        'MinimumMembershipLevel': 0,
+        'ContentRatingTypeId': 0,
+        'SaleAvailabilityLocations': None,
+        'SaleLocation': None,
+        'CollectibleItemId': None,
+        'CollectibleProductId': None,
+        'CollectiblesItemDetails': None,
+    })
     return True

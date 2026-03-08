@@ -161,7 +161,7 @@ class obj_type(logic.bin_entry, logic.gameconfig_entry):
             '-numTestServerPlayersUponStartup', '0',
         )
 
-    def read_server_output(self) -> None:
+    def read_server_output(self) -> None: # doesnt work
         '''
         Pipes Server.exe stdout to the logger, mirrors rcc.read_rcc_output.
         '''
@@ -184,6 +184,43 @@ class obj_type(logic.bin_entry, logic.gameconfig_entry):
                 break
         stdout.flush()
 
+    def run_injector(self) -> None:
+        '''
+        Runs Injector.exe against the already-started Server.exe process,
+        injecting local_rcc.dll.  Mirrors the GUI launcher:
+            Injector.exe --process-id <pid> --inject local_rcc.dll
+        '''
+        server_proc = self.popen_mains[0]
+        if server_proc.pid is None:
+            self.logger.log(
+                'Warning: Server.exe PID unavailable, skipping injection.',
+                context=logger.log_context.PYTHON_SETUP,
+            )
+            return
+
+        injector_path = self.get_versioned_path('Injector.exe')
+        dll_path      = self.get_versioned_path('local_rcc.dll')
+
+        try:
+            subprocess.run(
+                [
+                    injector_path,
+                    '--process-id', str(server_proc.pid),
+                    '--inject',     dll_path,
+                ],
+                check=True,
+            )
+        except FileNotFoundError:
+            self.logger.log(
+                'Warning: Injector.exe not found, skipping injection.',
+                context=logger.log_context.PYTHON_SETUP,
+            )
+        except subprocess.CalledProcessError as e:
+            self.logger.log(
+                f'Warning: Injector.exe exited with code {e.returncode}.',
+                context=logger.log_context.PYTHON_SETUP,
+            )
+
     def make_popen_threads(self) -> None:
         self.init_popen(
             exe_path=self.get_versioned_path('Server.exe'),
@@ -191,6 +228,10 @@ class obj_type(logic.bin_entry, logic.gameconfig_entry):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
+
+        # Inject local_rcc.dll into the now-running Server.exe process,
+        # matching what the GUI launcher's Injector.exe block does.
+        self.run_injector()
 
         pipe_thread = threading.Thread(
             target=self.read_server_output,
