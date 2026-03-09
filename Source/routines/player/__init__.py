@@ -145,14 +145,13 @@ class obj_type(logic.bin_entry):
             (
                 '-a', f'{base_url}/login/negotiate.ashx',
                 '-j', join_url, # this doesn't get passed to the webserver in v535 unlike v463. why??
-                # -t is sent verbatim as {"authenticationTicket": "<value>"} to
-                # /v1/authentication-ticket/redeem. We base64-encode a JSON blob
-                # of join params so it survives as a plain alphanumeric string
-                # (raw JSON gets truncated by the client due to quote handling).
+                # v535: encode join params as a base64 JSON blob so the redeem
+                # handler can store them on self.server.pending_join_data.
+                # Other versions: plain '1' (ticket is unused by RFD there).
                 '-t', base64.b64encode(json.dumps({
                     'user_code':    self.user_code or '',
                     'display_name': 'test',
-                }).encode()).decode(),
+                }).encode()).decode() if version == util.versions.rōblox.v535 else '1',
             ))
 
     @override
