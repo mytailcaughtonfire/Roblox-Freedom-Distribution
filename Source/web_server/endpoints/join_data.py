@@ -282,8 +282,6 @@ def _(self: web_server_handler) -> bool:
         'PingUrl': '',
         'PingInterval': 120,
         'UserName': username,
-        # join_config['display_name'] overrides display name if provided,
-        # otherwise falls back to username resolved from user_code.
         'DisplayName': display_name_override or username,
         'HasVerifiedBadge': False,
         'SeleniumTestMode': False,
@@ -332,6 +330,50 @@ def _(self: web_server_handler) -> bool:
     })
     return True
 
+@server_path(r'/v2/assets/(\d+)/details', regex=True, versions={versions.rōblox.v535})
+def _(self: web_server_handler, match) -> bool:
+    asset_id = int(match.group(1))
+    #asset_id = int(self.query['assetId'])
+
+    server_core = self.game_config.server_core
+    metadata = server_core.metadata
+
+    self.send_json({
+        'TargetId': asset_id,
+        'ProductType': 'User Product',
+        'AssetId': asset_id,
+        'ProductId': 1305046,
+        'Name': metadata.title,
+        'Description': metadata.description,
+        'AssetTypeId': 9,
+        'Creator': {
+            'Id': 79390755,
+            'Name': metadata.creator_name,
+            'CreatorType': 'User',
+            'CreatorTargetId': 1,
+            'HasVerifiedBadge': True,
+        },
+        'IconImageAssetId': 0, #607948062, # TODO: thumbnails
+        'Created': '2007-05-01T01:07:04.78Z',
+        'Updated': '2023-08-02T18:27:57.473Z',
+        'PriceInRobux': None,
+        'PriceInTickets': None,
+        'Sales': 0,
+        'IsNew': False,
+        'IsForSale': False,
+        'IsPublicDomain': False,
+        'IsLimited': False,
+        'IsLimitedUnique': False,
+        'Remaining': None,
+        'MinimumMembershipLevel': 0,
+        'ContentRatingTypeId': 0,
+        'SaleAvailabilityLocations': None,
+        'SaleLocation': None,
+        'CollectibleItemId': None,
+        'CollectibleProductId': None,
+        'CollectiblesItemDetails': None,
+    })
+    return True
 
 @server_path('/login/negotiate.ashx')
 @server_path('/universes/validate-place-join')

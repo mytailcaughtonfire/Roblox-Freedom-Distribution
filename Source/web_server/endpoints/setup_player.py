@@ -153,7 +153,7 @@ def _(self: web_server_handler) -> bool:
 def _(self: web_server_handler) -> bool:
     '''
     RBLXHUB-style account bootstrap endpoint.
-    Used by the 2022M client when fetching critical settings.
+    Used by the 2022M studio client when fetching critical settings.
     '''
     self.send_json({
         "UserId": 21,

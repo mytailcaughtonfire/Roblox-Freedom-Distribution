@@ -9,4 +9,6 @@ pyinstaller `
 	--icon "$root/Source/Icon.ico" `
 	--specpath "$root/PyInstallerWork/Spec" `
 	--add-data "$root/Source/*:./Source" `
-	--hidden-import requests # Allows functions in config to use the `requests` library (1 MiB addition).
+	--hidden-import requests
+	--hidden-import DracoPy
+	--hidden-import cryptography
