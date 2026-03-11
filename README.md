@@ -10,6 +10,8 @@ However, I do not blindly push code, I do take my time to review and see what th
 
 Please check out https://github.com/Windows81/Roblox-Freedom-Distribution to know how to run this project from source.
 
+_
+
 ## Requirements
 In your _GameConfig.toml_, you'll need to set the version:
 ```
@@ -25,7 +27,7 @@ When running, make sure to type n to not overwrite (I'll fix this later..)
 
 - [x] Studio launches and connects to place
 - [x] Server launches and connects to place
-- [ ] Player launches and connects to place
+- [x] Player launches and connects to place
 
 ### Asset Loading  
 
@@ -33,14 +35,14 @@ When running, make sure to type n to not overwrite (I'll fix this later..)
 - [x] MeshID
 - [x] TextureID
 - [x] RBXM
-- [ ] SoundID
+- [x] SoundID
 - [ ] Material Variants in RobloxPlayerBeta
-- [ ] Default Materials
+- [x] Default Materials
 - [ ] 2022 Materials
 
 ### Functionality
 
-- [ ] Studio/Server auto sign-in
+- [x] Studio/Server auto sign-in
 - [ ] Studio controls
 - [x] Copy/Paste from 2026 to 2022 studio (partially working!)
 
@@ -57,7 +59,7 @@ When running, make sure to type n to not overwrite (I'll fix this later..)
 - [ ] Place Settings (name, creator, thumbnail)
 - [ ] Asset Redirection
 - [ ] Tool Loading
-- [ ] UserID generation
+- [x] UserID generation
 - [ ] other stuff
 
 

@@ -85,7 +85,7 @@ def subparse(
     subparser.add_argument(
         '--display_name', '-dn',
         type=str,
-        nargs='*',
+        nargs='?',
         default=[],
         help='If --run_client is passed in, determines the display name for the player which joins the server.\n Only applicable for 2022M. Not required, but useful if needed.',
     )
