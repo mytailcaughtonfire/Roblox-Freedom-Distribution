@@ -48,6 +48,8 @@ def _(self: web_server_handler) -> bool:
     self.server.join_configs[token] = {
         'user_code':    self.query.get('user_code') or '',
         'display_name': self.query.get('display_name') or '',
+        'rcc_host':     self.query.get('rcc_host') or '127.0.0.1',
+        'rcc_port':     int(self.query.get('rcc_port') or util.const.RFD_DEFAULT_PORT),
     }
     self.send_data(b'ok')
     return True
@@ -88,6 +90,37 @@ def _(self: web_server_handler) -> bool:
     '''
     version = self.game_config.game_setup.roblox_version
     self.send_data(bytes(version.name, encoding='utf-8'))
+    return True
+
+
+@server_path('/Data/Upload.ashx')
+def _(self: web_server_handler) -> bool:
+    '''
+    Handles asset uploads from Studio (e.g. MaterialVariant TexturePack XML).
+    Generates a random 12-digit asset ID, stores the raw body in the asset
+    cache under that ID, and returns the ID as a plain integer string --
+    matching the real Roblox Data/Upload.ashx response format.
+    '''
+    import random as _random
+    import os as _os
+    try:
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length) if content_length else b''
+    except Exception:
+        body = b''
+
+    # Generate a random 12-digit ID that won't collide with real Roblox IDs.
+    # Retry on the rare chance the cache already has this ID.
+    asset_cache = self.game_config.asset_cache
+    while True:
+        asset_id = _random.randint(100_000_000_000, 999_999_999_999)
+        if not _os.path.exists(asset_cache.get_asset_path(asset_id)):
+            break
+
+    asset_cache.add_asset(asset_id, body)
+
+    # Real Roblox returns the asset version ID as a plain integer string.
+    self.send_data(str(asset_id).encode())
     return True
 
 

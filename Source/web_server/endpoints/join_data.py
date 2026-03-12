@@ -237,8 +237,16 @@ def _(self: web_server_handler) -> bool:
     token = ip_to_token.pop(client_ip, None)
     join_config: dict = join_configs.pop(token, {}) if token else {}
 
-    rcc_host = str(query_args.get('MachineAddress', '127.0.0.1'))
-    rcc_port = int(query_args.get('ServerPort', util.const.RFD_DEFAULT_PORT))
+    rcc_host = (
+        query_args.get('MachineAddress')
+        or join_config.get('rcc_host')
+        or '127.0.0.1'
+    )
+    rcc_port = int(
+        query_args.get('ServerPort')
+        or join_config.get('rcc_port')
+        or util.const.RFD_DEFAULT_PORT
+    )
 
     # join_config['user_code'] → passed via -u e.g. `python _main.py player -u helo`
     user_code = (

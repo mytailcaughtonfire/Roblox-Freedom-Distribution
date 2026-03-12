@@ -180,6 +180,8 @@ class obj_type(logic.bin_entry):
                     'token':        join_token,
                     'user_code':    self.user_code or '',
                     'display_name': self.display_name or '',
+                    'rcc_host':     self.rcc_host or '127.0.0.1',
+                    'rcc_port':     self.rcc_port or util.const.RFD_DEFAULT_PORT,
                 }),
             )
 
