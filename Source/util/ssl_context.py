@@ -283,19 +283,32 @@ RBLXHUB_REQUIRED_HOSTS = [
 
 def _ensure_rbolock_hosts(log_filter) -> None:
     '''
-    Ensures www.rbolock.tk, assetdelivery.rbolock.tk etc. resolve to 127.0.0.1.
-    Required when using RBLXHUB certs - Studio fetches assets from
-    https://assetdelivery.rbolock.tk:port/v1/asset?id=...
+    Ensures www.rbolock.tk etc. resolve to 127.0.0.1 in the hosts file.
+    On Windows: shows a friendly messagebox before requesting UAC.
+    On Linux:   stub — add entries manually for now.
     '''
-    if platform.system() != 'Windows':
+    system = platform.system()
+
+    if system == 'Linux':
+        log_filter.log(
+            text=(
+                'Linux: add the following to /etc/hosts manually (requires sudo):\n  ' +
+                '\n  '.join(RBLXHUB_REQUIRED_HOSTS)
+            ),
+            context=logger.log_context.PYTHON_SETUP,
+        )
         return
+
+    if system != 'Windows':
+        return
+
     hosts_path = r'C:\Windows\System32\drivers\etc\hosts'
     try:
         with open(hosts_path, 'r', encoding='utf-8', errors='replace') as f:
-            content = f.read()
+            existing = f.read()
     except OSError:
         log_filter.log(
-            text='Cannot read hosts file. Add manually: 127.0.0.1 assetdelivery.rbolock.tk',
+            text='Cannot read hosts file. Add manually: ' + ', '.join(RBLXHUB_REQUIRED_HOSTS),
             context=logger.log_context.PYTHON_SETUP,
             is_error=True,
         )
@@ -303,7 +316,7 @@ def _ensure_rbolock_hosts(log_filter) -> None:
 
     def _host_present(entry: str) -> bool:
         domain = entry.split(maxsplit=1)[1] if ' ' in entry else ''
-        for raw in content.splitlines():
+        for raw in existing.splitlines():
             line = raw.strip()
             if line and not line.startswith('#'):
                 if domain in line and '127.0.0.1' in line:
@@ -314,28 +327,49 @@ def _ensure_rbolock_hosts(log_filter) -> None:
     if not missing:
         return
 
+    # Show a friendly messagebox so the user knows what is about to happen
+    # and why, before the UAC prompt appears.
+    try:
+        import ctypes
+        MB_OK              = 0x00000000
+        MB_ICONINFORMATION = 0x00000040
+        missing_display = '\n'.join(f'  {e}' for e in missing)
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            (
+                'RFD needs admin to add a few entries to your Windows hosts file so that '
+                'the Roblox client can find the local server.\n\n'
+                'You\'ll see a admin prompt next, and you\'ll need to click "Yes" for this to work.\n'
+                'This is a one-time step and the only time admin is needed, and is a very harmless procedure.\n'
+                'You can find the hosts file in C:\\Windows\\System32\\drivers\\etc\\hosts. and open it in Notepad.\n\n'
+                'The following lines will be added:\n'
+                f'{missing_display}\n\n'
+            ),
+            'RFD-2022M - Setup',
+            MB_OK | MB_ICONINFORMATION,
+        )
+    except Exception:
+        pass  # If ctypes fails for any reason, skip the box and proceed to UAC
+
     log_filter.log(
-        text=(
-            'RBLXHUB certs need hosts entries. UAC prompt: Approve to add '
-            'assetdelivery.rbolock.tk etc. to hosts file.'
-        ),
+        text='Adding rbolock.tk entries to hosts file (UAC prompt incoming)...',
         context=logger.log_context.PYTHON_SETUP,
     )
-    # Like RBLXHUB setup_hosts: spawn elevated cmd to append to hosts
+
     entries = ' && '.join(f'echo {line} >>{hosts_path}' for line in missing)
     ps_cmd = (
         f'Start-Process -Verb RunAs -FilePath "cmd.exe" '
-        f'-ArgumentList \'/c {entries} && pause\''
+        f'-ArgumentList \'/c {entries}\'' 
     )
     try:
-        subprocess.Popen(['powershell', '-NoProfile', '-Command', ps_cmd])
+        proc = subprocess.Popen(['powershell', '-NoProfile', '-Command', ps_cmd])
+        proc.wait()  # Wait for the elevated cmd to finish before continuing
     except FileNotFoundError:
         log_filter.log(
             text='Add to hosts file manually (as Admin):\n  ' + '\n  '.join(missing),
             context=logger.log_context.PYTHON_SETUP,
             is_error=True,
         )
-
 
 def install_ca_to_windows_root(log_filter) -> None:
     '''
