@@ -301,6 +301,7 @@ class web_server_handler(http.server.BaseHTTPRequestHandler):
         if content_type:
             self.send_header('content-type', content_type)
         self.send_header('content-length', str(len(text)))
+        self.send_header('access-control-allow-origin', '*')
         self.end_headers()
         self.wfile.write(text)
 

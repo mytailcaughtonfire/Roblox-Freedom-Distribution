@@ -193,12 +193,16 @@ class asseter:
             return returns.construct()
 
     def _fetch_asset(self, asset_id: int | str, accept: str | None = None) -> returns.base_type:
-        # Always check local cache first — covers assets added via add_asset()
-        # (e.g. uploaded via Data/Upload.ashx) that won't exist on Roblox CDN.
-        asset_path = self.get_asset_path(asset_id)
-        local_data = self._load_file(asset_path)
-        if local_data is not None:
-            return returns.construct(data=local_data)
+        # Check local cache first — but NOT for DXT requests, because the cached
+        # file is the standard PNG format. Serving a cached PNG as DXT would
+        # corrupt the PBR pipeline. Local TexturePack XMLs uploaded via
+        # Data/Upload.ashx are safe to serve from cache regardless — they are
+        # never DXT themselves, the resolver handles their DXT conversion.
+        if accept not in _DXT_ACCEPT_HEADERS:
+            asset_path = self.get_asset_path(asset_id)
+            local_data = self._load_file(asset_path)
+            if local_data is not None:
+                return returns.construct(data=local_data)
 
         redirect_info = self.redirect_func(asset_id)
         if redirect_info is not None:

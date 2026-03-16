@@ -118,6 +118,9 @@ def download_item(url: str, cookie: str | None = None, accept: str | None = None
     try:
         http = urllib3.PoolManager()
         response = http.request('GET', url, headers=headers)
+        if accept is not None and accept in _DXT_ACCEPT_HEADERS:
+            print(f'[dxt] {url} status={response.status} content-type={response.headers.get("Content-Type")} content-encoding={response.headers.get("Content-Encoding")} len={len(response.data)}', flush=True)
+            #print(f'[dxt headers] {dict(response.headers)}', flush=True)
         if response.status != 200:
             return None
         return response.data
@@ -135,8 +138,6 @@ def download_rōblox_asset(asset_id: int, cookie: str | None = None, accept: str
             accept=accept,
         )
         if result is not None:
-            # DXT textures come back gzip-compressed; decompress them.
-            # Regular assets are already handled by unzip().
             return unzip(result)
 
 

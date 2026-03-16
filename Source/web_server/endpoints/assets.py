@@ -7,7 +7,7 @@ import util.const
 _DXT_TO_TEXTUREPACK_CHANNELS = {
     'rbx-format/color_dxt': ['color'],
     'rbx-format/norm_dxt':  ['normal'],
-    'rbx-format/spec_dxt':  ['metalness', 'roughness'],
+    'rbx-format/spec_dxt':  ['roughness', 'metalness'],
     'ktx/dxt':              ['color', 'normal', 'metalness', 'roughness'],
 }
 
@@ -50,7 +50,7 @@ def _resolve_texturepack_dxt(
     # Fetch the individual texture from CDN with the DXT accept header.
     result = asset_cache.get_asset(texture_id, bypass_blocklist=True, accept=accept)
     if isinstance(result, returns.ret_data):
-        print(f'[texturepack] fetched {len(result.data)} bytes for {texture_id}', flush=True)
+        print(f"[texturepack] {accept} fetched {len(result.data)} bytes, magic={result.data[:4]}", flush=True)
         return result.data
     print(f'[texturepack] CDN returned nothing for {texture_id} with {accept}', flush=True)
     return None
@@ -92,9 +92,31 @@ def _(self: web_server_handler) -> bool:
     # Also check the query string — the batch endpoint encodes the accept
     # format as ?accept=rbx-format/color_dxt etc. in the location URL.
     accept = self.headers.get('Accept')
+    if accept == 'ktx/dxt':
+        self.send_error(404)
+        return True
     accept_query = self.query.get('accept')
     if accept_query and (accept is None or accept == '*/*'):
         accept = accept_query
+
+    # For DXT TexturePack requests, we need to check the local cache first
+    # regardless of the accept header — DXT path in get_asset bypasses the
+    # file cache and goes straight to CDN, which won't have local IDs.
+    # So we load the file directly, check if it's a TexturePack XML, and
+    # resolve it ourselves before falling through to get_asset.
+    if accept and accept in _DXT_TO_TEXTUREPACK_CHANNELS:
+        asset_path = asset_cache.get_asset_path(asset_id)
+        local_data = asset_cache._load_file(asset_path)
+        if local_data is not None:
+            is_texturepack = (
+                b'<texturepack_version>' in local_data or
+                b'texturepack' in local_data[:256].lower()
+            )
+            if is_texturepack:
+                dxt_data = _resolve_texturepack_dxt(local_data, accept, asset_cache)
+                if dxt_data is not None:
+                    self.send_data(dxt_data, content_type='application/octet-stream')
+                    return True
 
     asset = asset_cache.get_asset(
         asset_id,
@@ -105,10 +127,8 @@ def _(self: web_server_handler) -> bool:
     if isinstance(asset, returns.ret_data):
         data = asset.data
 
-        # If this is a TexturePack XML being requested with a DXT accept header,
-        # parse the XML to find the real texture ID for this channel and fetch
-        # that texture from CDN with the DXT header — mirroring what real Roblox
-        # CDN does server-side when serving TexturePack assets.
+        # Also handle the case where get_asset returned the XML
+        # (e.g. cache hit before DXT bypass) with a DXT accept header.
         if accept and accept in _DXT_TO_TEXTUREPACK_CHANNELS:
             is_texturepack = (
                 b'<texturepack_version>' in data or
@@ -119,7 +139,6 @@ def _(self: web_server_handler) -> bool:
                 if dxt_data is not None:
                     self.send_data(dxt_data, content_type='application/octet-stream')
                     return True
-                # If resolution failed, fall through to serve the XML as-is.
 
         # Detect content type from magic bytes so the PBR pipeline
         # and other clients get the correct Content-Type header.
