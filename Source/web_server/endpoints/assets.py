@@ -2,12 +2,13 @@ from web_server._logic import web_server_handler, server_path
 import assets.returns as returns
 import util.const
 
-# Maps DXT accept header → TexturePack XML element name
-_DXT_TO_TEXTUREPACK_CHANNEL = {
-    'rbx-format/color_dxt': 'color',
-    'rbx-format/norm_dxt':  'normal',
-    'rbx-format/spec_dxt':  'roughness',
-    'ktx/dxt':              'color',  # fallback for generic DXT
+# Maps DXT accept header → ordered list of TexturePack XML element names to try.
+# spec_dxt tries metalness first (PBR metallic workflow), then roughness as fallback.
+_DXT_TO_TEXTUREPACK_CHANNELS = {
+    'rbx-format/color_dxt': ['color'],
+    'rbx-format/norm_dxt':  ['normal'],
+    'rbx-format/spec_dxt':  ['metalness', 'roughness'],
+    'ktx/dxt':              ['color', 'normal', 'metalness', 'roughness'],
 }
 
 
@@ -20,24 +21,38 @@ def _resolve_texturepack_dxt(
     Given a TexturePack XML blob and a DXT accept header, parse the XML,
     find the texture ID for the requested channel, then fetch that texture
     from CDN with the DXT accept header forwarded.
+    spec_dxt tries metalness first, then roughness as fallback.
     '''
     import xml.etree.ElementTree as _ET
-    channel = _DXT_TO_TEXTUREPACK_CHANNEL.get(accept)
-    if channel is None:
+    channels = _DXT_TO_TEXTUREPACK_CHANNELS.get(accept)
+    if not channels:
         return None
     try:
         root = _ET.fromstring(data.decode('utf-8', errors='replace'))
-        el = root.find(channel)
-        if el is None or not el.text:
-            return None
-        texture_id = int(el.text.strip())
     except Exception:
         return None
 
+    texture_id = None
+    for channel in channels:
+        el = root.find(channel)
+        if el is not None and el.text:
+            try:
+                texture_id = int(el.text.strip())
+                break
+            except ValueError:
+                continue
+
+    if texture_id is None:
+        print(f'[texturepack] no texture found for {accept} in channels {channels}', flush=True)
+        return None
+
+    print(f'[texturepack] {accept} → texture_id={texture_id}', flush=True)
     # Fetch the individual texture from CDN with the DXT accept header.
     result = asset_cache.get_asset(texture_id, bypass_blocklist=True, accept=accept)
     if isinstance(result, returns.ret_data):
+        print(f'[texturepack] fetched {len(result.data)} bytes for {texture_id}', flush=True)
         return result.data
+    print(f'[texturepack] CDN returned nothing for {texture_id} with {accept}', flush=True)
     return None
 
 #@server_path("/v2/assets")
@@ -94,7 +109,7 @@ def _(self: web_server_handler) -> bool:
         # parse the XML to find the real texture ID for this channel and fetch
         # that texture from CDN with the DXT header — mirroring what real Roblox
         # CDN does server-side when serving TexturePack assets.
-        if accept and accept in _DXT_TO_TEXTUREPACK_CHANNEL:
+        if accept and accept in _DXT_TO_TEXTUREPACK_CHANNELS:
             is_texturepack = (
                 b'<texturepack_version>' in data or
                 b'texturepack' in data[:256].lower()
